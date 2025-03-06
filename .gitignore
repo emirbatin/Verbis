@@ -172,3 +172,5 @@ DerivedData
 *.ipa
 *.xcuserstate
 project.xcworkspace
+
+docs
