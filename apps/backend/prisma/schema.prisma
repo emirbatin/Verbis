@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String       @id @default(uuid())
+  username        String       @unique
+  email           String       @unique
+  phone           String?      @unique
+  passwordHash    String
+  avatarUrl       String?
+  preferredLang   String       @default("en")
+  isOnline        Boolean      @default(false)
+  lastSeen        DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  // Relations
+  sentFriendships     Friendship[] @relation("UserFriendships")
+  receivedFriendships Friendship[] @relation("FriendFriendships")
+  initiatedCalls      Call[]       @relation("CallerCalls")
+  receivedCalls       Call[]       @relation("CalleeCalls")
+  sentMessages        Message[]    @relation("SentMessages")
+  receivedMessages    Message[]    @relation("ReceivedMessages")
+}
+
+model Friendship {
+  id          String   @id @default(uuid())
+  userId      String
+  friendId    String
+  status      String   @default("pending") // pending, accepted, blocked
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  user        User     @relation("UserFriendships", fields: [userId], references: [id])
+  friend      User     @relation("FriendFriendships", fields: [friendId], references: [id])
+  
+  @@unique([userId, friendId])
+}
+
+model Call {
+  id              String    @id @default(uuid())
+  callerId        String
+  calleeId        String
+  type            String    // audio, video
+  status          String    // initiated, ringing, active, ended
+  agoraChannelId  String
+  startedAt       DateTime?
+  endedAt         DateTime?
+  duration        Int?      // in seconds
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  caller          User      @relation("CallerCalls", fields: [callerId], references: [id])
+  callee          User      @relation("CalleeCalls", fields: [calleeId], references: [id])
+}
+
+model Message {
+  id              String    @id @default(uuid())
+  senderId        String
+  receiverId      String
+  content         String
+  originalLang    String?
+  translatedLang  String?
+  translatedText  String?
+  isRead          Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  sender          User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiver        User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
